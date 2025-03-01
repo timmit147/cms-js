@@ -8,11 +8,11 @@ document.addEventListener("DOMContentLoaded", function () {
                 toggleEditing(true);
                 break;
             case '#push':
-                publishChanges();
-                break;
-            case '#view':
-                alert("Edit mode disabled");
-                toggleEditing(false);
+                if (isEditingEnabled) {
+                    publishChanges();
+                } else {
+                    alert("You must enable edit mode first.");
+                }
                 break;
         }
     }
@@ -67,7 +67,6 @@ document.addEventListener("DOMContentLoaded", function () {
             alert("Failed to publish content.");
             updateUrlWithoutHash();
         });
-
     }
 
     function toggleEditing(enable) {
@@ -85,7 +84,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function updateUrlWithoutHash() {
         let url = window.location.href;
-        url = url.replace(/#(edit|view|push)$/, '');
+        url = url.replace(/#(edit|push)$/, '');
         window.history.replaceState({}, document.title, url);
     }
 
