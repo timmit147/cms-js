@@ -37,8 +37,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         // Now get the HTML after disabling editing
         const updatedContent = document.documentElement.innerHTML; // Get the current HTML content
-        const fileName = window.location.pathname.split('/').pop(); // Get the current file name (e.g., about.html)
-
+        const pathname = window.location.pathname;
+        const fileName = pathname === '/' ? 'index.html' : pathname.split('/').pop();
+        
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
             method: 'GET',
             headers: {
