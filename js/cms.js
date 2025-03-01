@@ -2,21 +2,23 @@ document.addEventListener("DOMContentLoaded", function () {
     let isEditingEnabled = false;
 
     function checkHash() {
-        if (window.location.hash === '#edit') {
-            alert("Edit mode enabled");
-            toggleEditing(true);
-        } else if (window.location.hash === '#push') {
-            alert("Publishing content...");
-            publishChanges();
-        } else if (window.location.hash === '#view') {
-            alert("Edit mode disabled");
-            toggleEditing(false);
+        switch (window.location.hash) {
+            case '#edit':
+                alert("Edit mode enabled");
+                toggleEditing(true);
+                break;
+            case '#push':
+                publishChanges();
+                break;
+            case '#view':
+                alert("Edit mode disabled");
+                toggleEditing(false);
+                break;
         }
     }
 
     window.addEventListener('hashchange', checkHash);
-
-    checkHash();
+    checkHash();  // Initial check when the page loads
 
     const GITHUB_REPO = 'cms-js';
     const GITHUB_OWNER = 'timmit147';
@@ -27,6 +29,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (!GITHUB_TOKEN) {
             alert("GitHub token is required to publish changes.");
+            updateUrlWithoutHash();
             return;
         }
 
@@ -54,15 +57,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 })
             });
         })
-        .then(response => response.json())
-        .then(data => {
+        .then(() => {
             alert("Content published to GitHub!");
-            toggleEditing(false);
-       })
+            toggleEditing(false);  // Disable editing after publishing
+            updateUrlWithoutHash();
+        })
         .catch(error => {
             console.error('Error publishing content:', error);
             alert("Failed to publish content.");
+            updateUrlWithoutHash();
         });
+
     }
 
     function toggleEditing(enable) {
@@ -74,8 +79,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 element.setAttribute("contenteditable", isEditingEnabled ? "true" : "false");
             }
         });
+
+        // Clean up URL by removing hash
+        updateUrlWithoutHash();
+    }
+
+    function updateUrlWithoutHash() {
         let url = window.location.href;
-        url = url.replace(/#(edit|view|push)$/, '');
-        window.history.replaceState({}, document.title, url); 
+        url = url.replace(/#(edit|view|push)$/, ''); // Removes hash
+        window.history.replaceState({}, document.title, url); // Replace the URL without the hash
     }
 });
