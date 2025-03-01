@@ -22,7 +22,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const GITHUB_REPO = 'cms-js';
     const GITHUB_OWNER = 'timmit147';
-    const FILE_PATH = 'index.html';
+
+    function getCurrentPagePath() {
+        let path = window.location.pathname;
+        return path === '/' ? 'index.html' : path.substring(1);
+    }
 
     function publishChanges() {
         const GITHUB_TOKEN = prompt("Please enter your GitHub token:");
@@ -34,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         const updatedContent = document.documentElement.innerHTML;
+        const FILE_PATH = getCurrentPagePath();
 
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
             method: 'GET',
