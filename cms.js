@@ -1,5 +1,7 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let isEditingEnabled = false;
+document.addEventListener("DOMContentLoaded", async function () {
+    const GITHUB_REPO = 'cms-js';
+    const GITHUB_OWNER = 'timmit147';
+    let originalHTML = '';
 
     function checkHash() {
         switch (window.location.hash) {
@@ -8,48 +10,50 @@ document.addEventListener("DOMContentLoaded", function () {
                 toggleEditing(true);
                 break;
             case '#push':
-                if (isEditingEnabled) {
+                if (originalHTML) {
                     publishChanges();
                 } else {
-                    alert("You must enable edit mode first.");
+                    alert("Error: Original HTML not loaded.");
                 }
                 break;
         }
     }
 
     window.addEventListener('hashchange', checkHash);
-    checkHash();
 
-    const GITHUB_REPO = 'cms-js';
-    const GITHUB_OWNER = 'timmit147';
+    // Get current file name
+    let fileName = window.location.pathname.split('/').pop() || 'index.html';
+
+    // Fetch the raw HTML from GitHub
+    async function fetchOriginalHTML() {
+        try {
+            const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${fileName}`);
+            if (!response.ok) throw new Error('Failed to fetch HTML');
+            originalHTML = await response.text();
+            checkHash();
+        } catch (error) {
+            console.error("Error fetching original HTML:", error);
+        }
+    }
+
+    fetchOriginalHTML();
 
     function publishChanges() {
-        toggleEditing(false); // Disable editing before capturing the HTML
+        toggleEditing(false); // Disable editing before saving
 
-        const GITHUB_TOKEN = prompt("Please enter your GitHub token:");
+        const GITHUB_TOKEN = prompt("Enter your GitHub token:");
         if (!GITHUB_TOKEN) {
-            alert("GitHub token is required to publish changes.");
+            alert("GitHub token required!");
             updateUrlWithoutHash();
             return;
         }
 
-        // Get the full updated HTML document with only edited content replaced
+        // Get the updated HTML content
         const updatedHTML = getUpdatedHTML();
-
-        const documentUrl = document.documentURI;
-        let fileName = documentUrl.substring(documentUrl.lastIndexOf('/') + 1);
-        
-        if (!fileName || fileName === '/') {
-            fileName = 'index.html';
-        } else if (!fileName.includes('.')) {
-            fileName += '.html';
-        }
 
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
             method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            }
+            headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
         })
         .then(response => response.json())
         .then(data => {
@@ -61,73 +65,54 @@ document.addEventListener("DOMContentLoaded", function () {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    message: 'Update HTML content',
+                    message: 'Updated editable content',
                     content: btoa(unescape(encodeURIComponent(updatedHTML))), // Encode properly for GitHub
                     sha: sha,
                 })
             });
         })
         .then(() => {
-            alert("Content published to GitHub!");
+            alert("Changes published to GitHub!");
             updateUrlWithoutHash();
         })
         .catch(error => {
-            console.error('Error publishing content:', error);
-            alert("Failed to publish content.");
+            console.error('Publishing failed:', error);
+            alert("Error publishing content.");
             updateUrlWithoutHash();
         });
     }
 
     function toggleEditing(enable) {
         const elements = document.querySelectorAll('*');
-        isEditingEnabled = enable;
-
         elements.forEach((element, index) => {
             if (element.children.length === 0 && element.innerText.trim()) {
-                if (isEditingEnabled) {
+                if (enable) {
                     element.setAttribute("contenteditable", "true");
-                    element.setAttribute("data-id", index); // Assign a unique ID
+                    element.setAttribute("data-id", index); // Unique ID for mapping
                 } else {
                     element.removeAttribute("contenteditable");
-                    element.removeAttribute("data-id"); // Clean up when disabling
+                    element.removeAttribute("data-id");
                 }
             }
         });
-
-        updateUrlWithoutHash();
     }
 
     function getUpdatedHTML() {
-        // Clone the current HTML document
-        const clonedDocument = document.documentElement.cloneNode(true);
+        let parser = new DOMParser();
+        let doc = parser.parseFromString(originalHTML, "text/html");
 
-        // Get all contenteditable elements in the original document
-        const editableElements = document.querySelectorAll('[contenteditable="true"]');
-
-        editableElements.forEach(originalElement => {
-            // Find the same element in the cloned document
-            const clonedElement = clonedDocument.querySelector(`[contenteditable="true"][data-id="${originalElement.dataset.id}"]`);
-            
-            if (clonedElement) {
-                clonedElement.innerHTML = originalElement.innerHTML; // Update content in clone
+        document.querySelectorAll('[contenteditable="true"]').forEach(editedElement => {
+            let originalElement = doc.querySelector(`[data-id="${editedElement.dataset.id}"]`);
+            if (originalElement) {
+                originalElement.innerHTML = editedElement.innerHTML; // Replace with edited content
             }
         });
 
-        // Return the full updated HTML
-        return "<!DOCTYPE html>\n" + clonedDocument.outerHTML;
+        return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
     }
 
     function updateUrlWithoutHash() {
-        let url = window.location.href;
-        url = url.replace(/#(edit|push)$/, '');
+        let url = window.location.href.replace(/#(edit|push)$/, '');
         window.history.replaceState({}, document.title, url);
     }
-
-    window.addEventListener('beforeunload', function (event) {
-        if (isEditingEnabled) {
-            const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
-            event.returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
-    });
 });
