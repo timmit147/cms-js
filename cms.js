@@ -39,7 +39,6 @@ document.addEventListener("DOMContentLoaded", async function () {
     fetchOriginalHTML();
 
     function publishChanges() {
-        toggleEditing(false); // Disable editing before saving
 
         const GITHUB_TOKEN = prompt("Enter your GitHub token:");
         if (!GITHUB_TOKEN) {
@@ -50,6 +49,8 @@ document.addEventListener("DOMContentLoaded", async function () {
 
         // Get the updated HTML content
         const updatedHTML = getUpdatedHTML();
+        toggleEditing(false); // Disable editing before saving
+
 
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
             method: 'GET',
