@@ -1,17 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Publish Page</title>
+    <title contenteditable="true">Simple Publish Page</title>
 </head>
 <body>
-    <h1>Editable Text</h1>
-    <div>Click here to edit this text.</div>
+    <h1 contenteditable="true">Editable Text</h1>
+    <div contenteditable="true">hallo</div>
     <br>
-    <button onclick="publishChanges()">Publish</button>
-    <button id="editSwitch" onclick="toggleEditing()">Enable Editing</button>
-</body>
+    <button onclick="publishChanges()" contenteditable="true">Publish</button>
+    <button id="editSwitch" onclick="toggleEditing()" contenteditable="true">Disable Editing</button>
+
 <script src="js/cms.js"></script>
 
-</html>
+
+</body>
