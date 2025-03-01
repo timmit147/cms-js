@@ -7,15 +7,11 @@
 </head>
 <body>
     <h1>Editable Text</h1>
-    <div id="editable" contenteditable="true">Click here to edit this text.</div>
+    <div>Click here to edit this text.</div>
     <br>
     <button onclick="publishChanges()">Publish</button>
-
-    <script>
-        function publishChanges() {
-            const text = document.getElementById("editable").innerText;
-            alert("Published: " + text);
-        }
-    </script>
+    <button id="editSwitch" onclick="toggleEditing()">Enable Editing</button>
 </body>
+<script src="js/cms.js"></script>
+
 </html>
