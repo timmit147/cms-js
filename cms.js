@@ -23,12 +23,10 @@ document.addEventListener("DOMContentLoaded", function () {
     const GITHUB_REPO = 'cms-js';
     const GITHUB_OWNER = 'timmit147';
 
-    function getCurrentPagePath() {
-        let path = window.location.pathname;
-        return path === '/' ? 'index.html' : path.substring(1);
-    }
-
     function publishChanges() {
+        // First, disable editing before getting the HTML
+        toggleEditing(false);
+
         const GITHUB_TOKEN = prompt("Please enter your GitHub token:");
 
         if (!GITHUB_TOKEN) {
@@ -37,10 +35,11 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const updatedContent = document.documentElement.innerHTML;
-        const FILE_PATH = getCurrentPagePath();
+        // Now get the HTML after disabling editing
+        const updatedContent = document.documentElement.innerHTML; // Get the current HTML content
+        const fileName = window.location.pathname.split('/').pop(); // Get the current file name (e.g., about.html)
 
-        fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+        fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${GITHUB_TOKEN}`,
@@ -49,7 +48,7 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(response => response.json())
         .then(data => {
             const sha = data.sha;
-            return fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
+            return fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${GITHUB_TOKEN}`,
@@ -64,7 +63,6 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(() => {
             alert("Content published to GitHub!");
-            toggleEditing(false);
             updateUrlWithoutHash();
         })
         .catch(error => {
@@ -80,7 +78,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         elements.forEach(element => {
             if (element.children.length === 0 && element.innerText.trim()) {
-                element.setAttribute("contenteditable", isEditingEnabled ? "true" : "false");
+                if (isEditingEnabled) {
+                    element.setAttribute("contenteditable", "true");
+                } else {
+                    element.removeAttribute("contenteditable"); // Remove contenteditable when editing is disabled
+                }
             }
         });
 
