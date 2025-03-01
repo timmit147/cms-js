@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async function () {
     const GITHUB_REPO = 'cms-js';
     const GITHUB_OWNER = 'timmit147';
+    const STORAGE_KEY = 'editable-content'; // Store edits locally or on GitHub
     let originalHTML = '';
 
     function checkHash() {
@@ -21,15 +22,14 @@ document.addEventListener("DOMContentLoaded", async function () {
 
     window.addEventListener('hashchange', checkHash);
 
-    // Get current file name
     let fileName = window.location.pathname.split('/').pop() || 'index.html';
 
-    // Fetch the raw HTML from GitHub
     async function fetchOriginalHTML() {
         try {
             const response = await fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/${fileName}`);
             if (!response.ok) throw new Error('Failed to fetch HTML');
             originalHTML = await response.text();
+            restoreEdits();
             checkHash();
         } catch (error) {
             console.error("Error fetching original HTML:", error);
@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async function () {
     fetchOriginalHTML();
 
     function publishChanges() {
-
+        toggleEditing(false);
         const GITHUB_TOKEN = prompt("Enter your GitHub token:");
         if (!GITHUB_TOKEN) {
             alert("GitHub token required!");
@@ -47,19 +47,21 @@ document.addEventListener("DOMContentLoaded", async function () {
             return;
         }
 
-        // Get the updated HTML content
-        const updatedHTML = getUpdatedHTML();
-        toggleEditing(false); // Disable editing before saving
+        let edits = getEditedContent();
+        if (Object.keys(edits).length === 0) {
+            alert("No changes detected.");
+            updateUrlWithoutHash();
+            return;
+        }
 
-
-        fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
+        fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/edits.json`, {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
         })
-        .then(response => response.json())
+        .then(response => response.ok ? response.json() : { sha: null }) // Handle missing file
         .then(data => {
             const sha = data.sha;
-            return fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
+            return fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/edits.json`, {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${GITHUB_TOKEN}`,
@@ -67,7 +69,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 },
                 body: JSON.stringify({
                     message: 'Updated editable content',
-                    content: btoa(unescape(encodeURIComponent(updatedHTML))), // Encode properly for GitHub
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(edits, null, 2)))), // Save edits as JSON
                     sha: sha,
                 })
             });
@@ -84,12 +86,11 @@ document.addEventListener("DOMContentLoaded", async function () {
     }
 
     function toggleEditing(enable) {
-        const elements = document.querySelectorAll('*');
-        elements.forEach((element, index) => {
+        document.querySelectorAll('*').forEach((element, index) => {
             if (element.children.length === 0 && element.innerText.trim()) {
                 if (enable) {
                     element.setAttribute("contenteditable", "true");
-                    element.setAttribute("data-id", index); // Unique ID for mapping
+                    element.setAttribute("data-id", index);
                 } else {
                     element.removeAttribute("contenteditable");
                     element.removeAttribute("data-id");
@@ -98,18 +99,27 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
     }
 
-    function getUpdatedHTML() {
-        let parser = new DOMParser();
-        let doc = parser.parseFromString(originalHTML, "text/html");
-
+    function getEditedContent() {
+        let edits = {};
         document.querySelectorAll('[contenteditable="true"]').forEach(editedElement => {
-            let originalElement = doc.querySelector(`[data-id="${editedElement.dataset.id}"]`);
-            if (originalElement) {
-                originalElement.innerHTML = editedElement.innerHTML; // Replace with edited content
+            if (editedElement.dataset.id) {
+                edits[editedElement.dataset.id] = editedElement.innerHTML;
             }
         });
+        return edits;
+    }
 
-        return "<!DOCTYPE html>\n" + doc.documentElement.outerHTML;
+    function restoreEdits() {
+        fetch(`https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/main/edits.json`)
+            .then(response => response.ok ? response.json() : {})
+            .then(edits => {
+                document.querySelectorAll('*').forEach((element, index) => {
+                    if (edits[index]) {
+                        element.innerHTML = edits[index];
+                    }
+                });
+            })
+            .catch(error => console.warn("No previous edits found:", error));
     }
 
     function updateUrlWithoutHash() {
