@@ -5,9 +5,13 @@ document.addEventListener("DOMContentLoaded", function () {
         switch (window.location.hash) {
             case '#edit':
                 alert("Edit mode enabled");
-                // Re-fetch the original HTML and then enable editing
-                refreshOriginalContent(() => {
-                    toggleEditing(true);
+                // Refresh the page content from the server, then enable editing.
+                refreshOriginalContent(function() {
+                    // After rewriting the document, a short delay allows the new DOM to load.
+                    setTimeout(() => {
+                        // Reinitialize editing mode.
+                        toggleEditing(true);
+                    }, 100);
                 });
                 break;
             case '#push':
@@ -27,7 +31,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const GITHUB_OWNER = 'timmit147';
 
     function publishChanges() {
-        // First, disable editing before getting the HTML
+        // Disable editing before capturing HTML.
         toggleEditing(false);
 
         const GITHUB_TOKEN = prompt("Please enter your GitHub token:");
@@ -38,7 +42,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        // Now get the HTML after disabling editing
+        // Get the updated HTML after disabling editing.
         const updatedContent = document.documentElement.innerHTML;
         const documentUrl = document.documentURI;
         let fileName = documentUrl.substring(documentUrl.lastIndexOf('/') + 1);
@@ -104,19 +108,16 @@ document.addEventListener("DOMContentLoaded", function () {
         window.history.replaceState({}, document.title, url);
     }
 
-    // This function fetches the original HTML from the server and replaces the current content.
+    // This function fetches the original HTML from the server and replaces the current document.
     function refreshOriginalContent(callback) {
-        const url = window.location.href.split('#')[0]; // Remove any hash from the URL
+        const url = window.location.href.split('#')[0]; // Remove any hash
         fetch(url)
             .then(response => response.text())
             .then(html => {
-                // Use a DOMParser to safely parse the fetched HTML
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                // Replace current head and body with the fetched ones.
-                document.head.innerHTML = doc.head.innerHTML;
-                document.body.innerHTML = doc.body.innerHTML;
-                // Optionally, run any reinitialization code here.
+                // Replace the entire document content.
+                document.open();
+                document.write(html);
+                document.close();
                 if (callback) callback();
             })
             .catch(error => console.error("Failed to fetch original content:", error));
