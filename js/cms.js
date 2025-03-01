@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     window.addEventListener('hashchange', checkHash);
-    checkHash();  // Initial check when the page loads
+    checkHash();
 
     const GITHUB_REPO = 'cms-js';
     const GITHUB_OWNER = 'timmit147';
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", function () {
             return;
         }
 
-        const updatedContent = document.documentElement.innerHTML; // Get the entire HTML content
+        const updatedContent = document.documentElement.innerHTML;
 
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${FILE_PATH}`, {
             method: 'GET',
@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", function () {
         })
         .then(() => {
             alert("Content published to GitHub!");
-            toggleEditing(false);  // Disable editing after publishing
+            toggleEditing(false);
             updateUrlWithoutHash();
         })
         .catch(error => {
@@ -80,13 +80,20 @@ document.addEventListener("DOMContentLoaded", function () {
             }
         });
 
-        // Clean up URL by removing hash
         updateUrlWithoutHash();
     }
 
     function updateUrlWithoutHash() {
         let url = window.location.href;
-        url = url.replace(/#(edit|view|push)$/, ''); // Removes hash
-        window.history.replaceState({}, document.title, url); // Replace the URL without the hash
+        url = url.replace(/#(edit|view|push)$/, '');
+        window.history.replaceState({}, document.title, url);
     }
+
+    window.addEventListener('beforeunload', function (event) {
+        if (isEditingEnabled) {
+            const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
+            event.returnValue = confirmationMessage;
+            return confirmationMessage;
+        }
+    });
 });
