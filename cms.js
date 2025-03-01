@@ -5,7 +5,10 @@ document.addEventListener("DOMContentLoaded", function () {
         switch (window.location.hash) {
             case '#edit':
                 alert("Edit mode enabled");
-                toggleEditing(true);
+                // Re-fetch the original HTML and then enable editing
+                refreshOriginalContent(() => {
+                    toggleEditing(true);
+                });
                 break;
             case '#push':
                 if (isEditingEnabled) {
@@ -36,15 +39,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Now get the HTML after disabling editing
-        const updatedContent = document.documentElement.innerHTML; // Get the current HTML content
+        const updatedContent = document.documentElement.innerHTML;
         const documentUrl = document.documentURI;
         let fileName = documentUrl.substring(documentUrl.lastIndexOf('/') + 1);
-        
+
         if (!fileName || fileName === '/') {
             fileName = 'index.html';
         } else if (!fileName.includes('.')) {
             fileName += '.html';
-        }        
+        }
         fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
             method: 'GET',
             headers: {
@@ -87,7 +90,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (isEditingEnabled) {
                     element.setAttribute("contenteditable", "true");
                 } else {
-                    element.removeAttribute("contenteditable"); // Remove contenteditable when editing is disabled
+                    element.removeAttribute("contenteditable");
                 }
             }
         });
@@ -99,6 +102,24 @@ document.addEventListener("DOMContentLoaded", function () {
         let url = window.location.href;
         url = url.replace(/#(edit|push)$/, '');
         window.history.replaceState({}, document.title, url);
+    }
+
+    // This function fetches the original HTML from the server and replaces the current content.
+    function refreshOriginalContent(callback) {
+        const url = window.location.href.split('#')[0]; // Remove any hash from the URL
+        fetch(url)
+            .then(response => response.text())
+            .then(html => {
+                // Use a DOMParser to safely parse the fetched HTML
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                // Replace current head and body with the fetched ones.
+                document.head.innerHTML = doc.head.innerHTML;
+                document.body.innerHTML = doc.body.innerHTML;
+                // Optionally, run any reinitialization code here.
+                if (callback) callback();
+            })
+            .catch(error => console.error("Failed to fetch original content:", error));
     }
 
     window.addEventListener('beforeunload', function (event) {
