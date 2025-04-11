@@ -1,141 +1,136 @@
-document.addEventListener("DOMContentLoaded", function () {
-    let isEditingEnabled = false;
-    let originalContent = {};
+document.addEventListener("click", function(event) {
+    const tag = event.target.tagName.toLowerCase();
 
-    function checkHash() {
-        switch (window.location.hash) {
-            case '#edit':
-                alert("Edit mode enabled");
-                toggleEditing(true);
-                break;
-            case '#push':
-                if (isEditingEnabled) {
-                    publishChanges();
-                } else {
-                    alert("You must enable edit mode first.");
-                }
-                break;
-        }
-    }
+    // Create the white full-screen div
+    const overlay = document.createElement("div");
+    overlay.classList.add("overlay");
+    overlay.style.userSelect = 'none';  // Disable selection
 
-    window.addEventListener('hashchange', checkHash);
-    checkHash();
-
-    const GITHUB_REPO = 'cms-js';
-    const GITHUB_OWNER = 'timmit147';
-
-    function saveOriginalContent() {
-        document.querySelectorAll('[contenteditable="true"]').forEach(element => {
-            originalContent[element.dataset.id] = element.innerHTML;
-        });
-    }
-
-    function getEditedContent() {
-        let edits = {};
-        document.querySelectorAll('[contenteditable="true"]').forEach(element => {
-            if (originalContent[element.dataset.id] !== element.innerHTML) {
-                edits[element.dataset.id] = element.innerHTML;
-            }
-        });
-
-        return edits;
-    }
-
-    function publishChanges() {
-        toggleEditing(false);
-
-        const GITHUB_TOKEN = prompt("Please enter your GitHub token:");
-
-        if (!GITHUB_TOKEN) {
-            alert("GitHub token is required to publish changes.");
-            updateUrlWithoutHash();
-            return;
-        }
-
-        let edits = getEditedContent();
-
-        if (Object.keys(edits).length === 0) {
-            alert("No changes detected.");
-            return;
-        }
-
-        const documentUrl = document.documentURI;
-        let fileName = documentUrl.substring(documentUrl.lastIndexOf('/') + 1);
-        
-        if (!fileName || fileName === '/') {
-            fileName = 'index.html';
-        } else if (!fileName.includes('.')) {
-            fileName += '.html';
-        }
-
-        fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${GITHUB_TOKEN}`,
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            const sha = data.sha;
-
-            let updatedHtml = document.documentElement.innerHTML;
-            Object.keys(edits).forEach(id => {
-                let el = document.querySelector(`[data-id="${id}"]`);
-                if (el) {
-                    updatedHtml = updatedHtml.replace(originalContent[id], edits[id]);
-                }
-            });
-
-            return fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fileName}`, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${GITHUB_TOKEN}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    message: 'Update edited content',
-                    content: btoa(updatedHtml),
-                    sha: sha,
-                })
-            });
-        })
-        .then(() => {
-            alert("Changes published to GitHub!");
-            updateUrlWithoutHash();
-        })
-        .catch(error => {
-            console.error('Error publishing content:', error);
-            alert("Failed to publish content.");
-            updateUrlWithoutHash();
-        });
-    }
-
-    function toggleEditing(enable) {
-        isEditingEnabled = enable;
-
-        document.querySelectorAll('[contenteditable="true"]').forEach(element => {
-            if (enable) {
-                element.setAttribute("contenteditable", "true");
-            } else {
-                element.removeAttribute("contenteditable");
-            }
-        });
-
-        if (enable) saveOriginalContent();
-        updateUrlWithoutHash();
-    }
-
-    function updateUrlWithoutHash() {
-        let url = window.location.href;
-        url = url.replace(/#(edit|push)$/, '');
-        window.history.replaceState({}, document.title, url);
-    }
-
-    window.addEventListener('beforeunload', function (event) {
-        if (isEditingEnabled) {
-            const confirmationMessage = 'You have unsaved changes. Are you sure you want to leave?';
-            event.returnValue = confirmationMessage;
-            return confirmationMessage;
-        }
+    // Close button (X) in the top-right corner
+    const closeButton = document.createElement("button");
+    closeButton.classList.add("close-button");
+    closeButton.textContent = "×";
+    
+    closeButton.addEventListener("click", function(event) {
+        event.stopPropagation();
+        document.body.removeChild(overlay);
     });
+
+    overlay.appendChild(closeButton);
+
+    // Handle text click (input field with update button)
+    if (["h1", "h2", "h3", "p"].includes(tag)) {
+        // Create the input field with the clicked text as its value
+        const inputField = document.createElement("input");
+        inputField.classList.add("input-field");
+        inputField.type = "text";
+        inputField.value = event.target.innerText;
+
+        // Create the "Update" button
+        const updateButton = document.createElement("button");
+        updateButton.classList.add("update-button");
+        updateButton.textContent = "Update";
+
+        // When the "Update" button is clicked, update the text of the target element
+        updateButton.addEventListener("click", function() {
+            event.target.innerText = inputField.value;
+            document.body.removeChild(overlay);
+        });
+
+        overlay.appendChild(inputField);
+        overlay.appendChild(updateButton);
+
+    } else if (tag === "img") {
+        // Show message for image click
+        const message = document.createElement("div");
+        message.classList.add("image-message");
+        message.textContent = "Click the screen to upload image or drag image";
+        
+        overlay.appendChild(message);
+
+        const handleDrop = function(event) {
+            event.preventDefault();
+            const file = event.dataTransfer.files[0];
+            if (file && file.type.startsWith("image/")) {
+                const reader = new FileReader();
+                reader.onload = function() {
+                    const img = new Image();
+                    img.src = reader.result;
+                    img.classList.add("uploaded-image");
+                    overlay.appendChild(img);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        const handleClick = function() {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = "image/*";
+            input.style.display = "none";
+            input.addEventListener("change", function(event) {
+                const file = event.target.files[0];
+                if (file && file.type.startsWith("image/")) {
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const img = new Image();
+                        img.src = reader.result;
+                        img.classList.add("uploaded-image");
+                        overlay.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            document.body.appendChild(input);
+            input.click();
+        };
+
+        overlay.addEventListener("click", handleClick);
+        overlay.addEventListener("dragover", function(event) {
+            event.preventDefault();
+        });
+        overlay.addEventListener("drop", handleDrop);
+    } else if (tag === "section" || tag === "article") {
+        // Create the buttons: Copy, Paste, Delete
+        const buttonContainer = document.createElement("div");
+        buttonContainer.classList.add("button-container");
+
+        // Copy Button
+        const copyButton = document.createElement("button");
+        copyButton.classList.add("copy-button");
+        copyButton.textContent = "Copy";
+
+        copyButton.addEventListener("click", function() {
+            const htmlToCopy = event.target.outerHTML;
+            navigator.clipboard.writeText(htmlToCopy).then(function() {
+                alert("Content copied to clipboard");
+            }).catch(function(err) {
+                console.error("Error copying text: ", err);
+            });
+        });
+
+        // Paste Button (no action)
+        const pasteButton = document.createElement("button");
+        pasteButton.classList.add("paste-button");
+        pasteButton.textContent = "Paste";
+
+        // Delete Button (no action)
+        const deleteButton = document.createElement("button");
+        deleteButton.classList.add("delete-button");
+        deleteButton.textContent = "Delete";
+
+        buttonContainer.appendChild(copyButton);
+        buttonContainer.appendChild(pasteButton);
+        buttonContainer.appendChild(deleteButton);
+
+        overlay.appendChild(buttonContainer);
+    }
+
+    // Prevent the event from propagating inside the popup
+    overlay.addEventListener("click", function(event) {
+        event.stopPropagation();
+    });
+
+    event.stopPropagation();
+    document.body.appendChild(overlay);
 });
