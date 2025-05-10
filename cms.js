@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
   const menu = document.createElement('div');
   menu.id = 'optionsMenu';
@@ -30,10 +29,205 @@ document.addEventListener('DOMContentLoaded', () => {
       padding: 0.5rem 1rem;
       font-size: 1rem;
       cursor: pointer;
+      background: black;
+      color: white;
+      border: none;
+      border-radius: 5px;
     `;
     btn.onclick = onClick;
     return btn;
   };
+
+const processEditableElements = (element, parentWrapper) => {
+  Array.from(element.children).forEach((childElement) => {
+    const tag = childElement.tagName.toLowerCase();
+    const editableTags = ['h1','h2','h3','h4','h5','h6','p','span','a','img','ul'];
+
+    if (!editableTags.includes(tag)) {
+      if (childElement.children.length > 0) {
+        processEditableElements(childElement, parentWrapper);
+      }
+      return;
+    }
+
+    const wrapper = document.createElement('div');
+    wrapper.style = 'margin-bottom: 1.5rem;';
+
+    const label = document.createElement('label');
+    label.style = 'display: block; font-weight: bold; margin-bottom: 0.25rem;';
+
+ if (tag === 'ul') {
+  label.textContent = 'List Items:';
+  wrapper.appendChild(label);
+
+  const list = childElement;
+
+  const renderListItems = () => {
+    // Clear previously rendered items
+    wrapper.querySelectorAll('.li-wrapper').forEach(el => el.remove());
+
+    const items = Array.from(list.children).filter(li => li.tagName.toLowerCase() === 'li');
+
+    items.forEach((li, i) => {
+      const liWrapper = document.createElement('div');
+      liWrapper.className = 'li-wrapper';
+      liWrapper.style = 'margin-bottom: 1rem; padding: 0.5rem; border: 1px solid #ccc;';
+
+      // Sub-elements of <li> (like <h3>, <p>) rendered individually
+      processEditableElements(li, liWrapper);
+
+      const removeBtn = document.createElement('button');
+      removeBtn.textContent = '🗑';
+      removeBtn.style = `
+        padding: 0.3rem 0.6rem;
+        margin-top: 0.5rem;
+        font-size: 1rem;
+        background: black;
+        color: white;
+        cursor: pointer;
+        border: none;
+        border-radius: 4px;
+      `;
+      removeBtn.onclick = () => {
+        if (list.children.length <= 1) {
+          alert('You must have at least one list item.');
+          return;
+        }
+        li.remove();
+        renderListItems();
+      };
+
+      liWrapper.appendChild(removeBtn);
+      wrapper.appendChild(liWrapper);
+    });
+  };
+
+  renderListItems();
+
+  const addBtn = document.createElement('button');
+  addBtn.textContent = '➕ Add List Item';
+  addBtn.style = `
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 1rem;
+    cursor: pointer;
+    background: black;
+    color: white;
+    border: none;
+    border-radius: 4px;
+  `;
+  addBtn.onclick = () => {
+    const newLi = document.createElement('li');
+    const newH3 = document.createElement('h3');
+    newH3.textContent = 'New Title';
+    const newP = document.createElement('p');
+    newP.textContent = 'New description text.';
+    newLi.appendChild(newH3);
+    newLi.appendChild(newP);
+    list.appendChild(newLi);
+    renderListItems();
+  };
+
+  wrapper.appendChild(addBtn);
+  parentWrapper.appendChild(wrapper);
+  return;
+}
+
+
+    const editable = document.createElement('div');
+    editable.contentEditable = true;
+    editable.style = 'width: 100%; padding: 0.5rem; border: 1px solid #ccc;';
+
+    if (tag.startsWith('h')) {
+      label.textContent = 'Heading Text:';
+      editable.innerHTML = childElement.innerHTML;
+      editable.addEventListener('input', () => {
+        childElement.innerHTML = editable.innerHTML;
+      });
+      wrapper.appendChild(label);
+      wrapper.appendChild(editable);
+
+    } else if (tag === 'p') {
+      label.textContent = 'Paragraph Text:';
+      editable.innerHTML = childElement.innerHTML;
+      editable.addEventListener('input', () => {
+        childElement.innerHTML = editable.innerHTML;
+      });
+      wrapper.appendChild(label);
+      wrapper.appendChild(editable);
+
+    } else if (tag === 'span') {
+      label.textContent = 'Inline Text:';
+      editable.innerHTML = childElement.innerHTML;
+      editable.addEventListener('input', () => {
+        childElement.innerHTML = editable.innerHTML;
+      });
+      wrapper.appendChild(label);
+      wrapper.appendChild(editable);
+
+    } else if (tag === 'a') {
+      const linkLabel = document.createElement('label');
+      linkLabel.textContent = 'Link Text:';
+      linkLabel.style = label.style;
+
+      editable.innerHTML = childElement.innerHTML;
+      editable.addEventListener('input', () => {
+        childElement.innerHTML = editable.innerHTML;
+      });
+
+      const hrefLabel = document.createElement('label');
+      hrefLabel.textContent = 'Link URL:';
+      hrefLabel.style = label.style;
+
+      const hrefInput = document.createElement('input');
+      hrefInput.type = 'text';
+      hrefInput.value = childElement.href;
+      hrefInput.placeholder = 'https://example.com';
+      hrefInput.style = 'width: 100%; padding: 0.5rem; margin-top: 0.25rem;';
+      hrefInput.addEventListener('input', () => {
+        childElement.href = hrefInput.value;
+      });
+
+      wrapper.appendChild(linkLabel);
+      wrapper.appendChild(editable);
+      wrapper.appendChild(hrefLabel);
+      wrapper.appendChild(hrefInput);
+
+    } else if (tag === 'img') {
+      const srcLabel = document.createElement('label');
+      srcLabel.textContent = 'Image Source:';
+      srcLabel.style = label.style;
+
+      const srcInput = document.createElement('input');
+      srcInput.type = 'text';
+      srcInput.value = childElement.src;
+      srcInput.style = 'width: 100%; padding: 0.5rem;';
+      srcInput.addEventListener('input', () => {
+        childElement.src = srcInput.value;
+      });
+
+      const fileInput = document.createElement('input');
+      fileInput.type = 'file';
+      fileInput.accept = 'image/*';
+      fileInput.style = 'margin-top: 0.5rem;';
+      fileInput.addEventListener('change', (e) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          childElement.src = ev.target.result;
+          srcInput.value = ev.target.result;
+        };
+        reader.readAsDataURL(e.target.files[0]);
+      });
+
+      wrapper.appendChild(srcLabel);
+      wrapper.appendChild(srcInput);
+      wrapper.appendChild(fileInput);
+    }
+
+    parentWrapper.appendChild(wrapper);
+  });
+};
+
 
   const renderEditScreen = () => {
     menu.innerHTML = '';
@@ -46,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     classSelectWrapper.style = 'margin-bottom: 1rem;';
 
     const classSelectLabel = document.createElement('label');
-    classSelectLabel.textContent = 'Select Section Class:';
+    classSelectLabel.textContent = 'Select Element Class:';
     classSelectLabel.style = 'font-weight: bold;';
     classSelectWrapper.appendChild(classSelectLabel);
 
@@ -55,8 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
     classSelectWrapper.appendChild(classSelect);
     wrapper.appendChild(classSelectWrapper);
 
-    // ➕ Add Section Below
-    const addSectionBtn = createButton('➕ Add Section Below', () => {
+    const addSectionBtn = createButton('➕ Add Below', () => {
       const selectedClass = classSelect.value;
       if (!selectedClass) return;
 
@@ -65,32 +258,33 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(html => {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
-          const matchingSection = Array.from(doc.querySelectorAll('section'))
-            .find(section => section.classList.contains(selectedClass));
+          const allElements = ['section', 'header', 'footer'].flatMap(tag =>
+            Array.from(doc.querySelectorAll(tag))
+          );
+          const matchingElement = allElements.find(el => el.classList.contains(selectedClass));
 
-          if (matchingSection && currentSection) {
-            const clonedSection = matchingSection.cloneNode(true);
-            currentSection.insertAdjacentElement('afterend', clonedSection);
-            clonedSection.addEventListener('click', e => {
+          if (matchingElement && currentSection) {
+            const cloned = matchingElement.cloneNode(true);
+            currentSection.insertAdjacentElement('afterend', cloned);
+            cloned.addEventListener('click', e => {
               e.stopPropagation();
-              currentSection = clonedSection;
+              currentSection = cloned;
               renderEditScreen();
             });
           } else {
-            alert('Matching section not found.');
+            alert('Matching element not found.');
           }
 
-          menu.style.display = 'none'; // auto-close
+          menu.style.display = 'none';
         })
         .catch(error => {
-          console.error('Failed to add section:', error);
+          console.error('Failed to add element:', error);
           menu.style.display = 'none';
         });
     });
     classSelectWrapper.appendChild(addSectionBtn);
 
-    // 🗑 Remove
-    const removeBtn = createButton('🗑 Remove Section', () => {
+    const removeBtn = createButton('🗑 Remove Element', () => {
       if (currentSection) {
         currentSection.remove();
         currentSection = null;
@@ -99,8 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     classSelectWrapper.appendChild(removeBtn);
 
-    // ⬇ Move Down
-    const moveDownBtn = createButton('⬇ Move Section Down', () => {
+    const moveDownBtn = createButton('⬇ Move Element Down', () => {
       if (currentSection && currentSection.nextElementSibling) {
         currentSection.parentNode.insertBefore(currentSection.nextElementSibling, currentSection);
       }
@@ -114,13 +307,15 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(html => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, 'text/html');
-        const sections = doc.querySelectorAll('section');
+        const allElements = ['section', 'header', 'footer'].flatMap(tag =>
+          Array.from(doc.querySelectorAll(tag))
+        );
 
-        const classNames = Array.from(sections)
-          .map(section => section.className.trim())
-          .filter(name => name !== "");
+        const classNames = Array.from(new Set(
+          allElements.map(el => el.className.trim()).filter(name => name !== "")
+        ));
 
-        [...new Set(classNames)].forEach(cls => {
+        classNames.forEach(cls => {
           const option = document.createElement('option');
           option.value = cls;
           option.textContent = cls;
@@ -129,13 +324,11 @@ document.addEventListener('DOMContentLoaded', () => {
       })
       .catch(error => console.error('Failed to fetch templates:', error));
 
-    // Label
     const label = document.createElement('p');
-    label.textContent = `Editing Section: ${currentSection ? currentSection.tagName.toLowerCase() : 'none'}`;
+    label.textContent = `Editing Element: ${currentSection ? currentSection.tagName.toLowerCase() : 'none'}`;
     label.style = 'font-weight: bold; margin-bottom: 0.5rem;';
     wrapper.appendChild(label);
 
-    // Toolbar
     const toolbar = document.createElement('div');
     toolbar.style = 'margin-bottom: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;';
     toolbar.appendChild(createButton('Bold', () => document.execCommand('bold')));
@@ -147,115 +340,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }));
     wrapper.appendChild(toolbar);
 
-    // Editable content
-    Array.from(currentSection.children).forEach((childElement, index) => {
-      const fieldWrapper = document.createElement('div');
-      fieldWrapper.style = 'margin-bottom: 1rem;';
-
-      if (childElement.tagName === 'A') {
-        const editable = document.createElement('div');
-        editable.contentEditable = true;
-        editable.innerHTML = childElement.innerHTML;
-        editable.style = 'width: 100%; padding: 0.5rem; border: 1px solid #ccc;';
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
-        });
-
-        const hrefInput = document.createElement('input');
-        hrefInput.type = 'text';
-        hrefInput.value = childElement.href;
-        hrefInput.placeholder = 'URL (href)';
-        hrefInput.style = 'width: 100%; margin-top: 0.5rem; padding: 0.5rem;';
-        hrefInput.addEventListener('input', () => {
-          childElement.href = hrefInput.value;
-        });
-
-        const targetSelect = document.createElement('select');
-        ['_self', '_blank', '_parent', '_top'].forEach(t => {
-          const opt = document.createElement('option');
-          opt.value = t;
-          opt.textContent = t;
-          if (childElement.target === t) opt.selected = true;
-          targetSelect.appendChild(opt);
-        });
-        targetSelect.addEventListener('change', () => {
-          childElement.target = targetSelect.value;
-        });
-
-        fieldWrapper.appendChild(editable);
-        fieldWrapper.appendChild(hrefInput);
-        fieldWrapper.appendChild(targetSelect);
-      } else if (childElement.tagName === 'IMG') {
-        const altInput = document.createElement('input');
-        altInput.type = 'text';
-        altInput.value = childElement.alt;
-        altInput.placeholder = 'Alt text';
-        altInput.style = 'width: 100%; margin-bottom: 0.5rem; padding: 0.5rem;';
-        altInput.addEventListener('input', () => {
-          childElement.alt = altInput.value;
-        });
-
-        const srcInput = document.createElement('input');
-        srcInput.type = 'text';
-        srcInput.value = childElement.src;
-        srcInput.placeholder = 'Image src';
-        srcInput.style = 'width: 100%; margin-bottom: 0.5rem; padding: 0.5rem;';
-        srcInput.addEventListener('input', () => {
-          childElement.src = srcInput.value;
-        });
-
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.addEventListener('change', (e) => {
-          const reader = new FileReader();
-          reader.onload = ev => {
-            childElement.src = ev.target.result;
-            srcInput.value = ev.target.result;
-          };
-          reader.readAsDataURL(e.target.files[0]);
-        });
-
-        fieldWrapper.appendChild(altInput);
-        fieldWrapper.appendChild(srcInput);
-        fieldWrapper.appendChild(fileInput);
-      } else {
-        const editable = document.createElement('div');
-        editable.contentEditable = true;
-        editable.innerHTML = childElement.innerHTML;
-        editable.style = 'width: 100%; padding: 0.5rem; border: 1px solid #ccc;';
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
-        });
-        fieldWrapper.appendChild(editable);
-      }
-
-      wrapper.appendChild(fieldWrapper);
-    });
-
+    processEditableElements(currentSection, wrapper);
     menu.appendChild(wrapper);
 
-    // ❌ Close button only
     const closeBtn = createButton('❌ Close', () => {
       menu.style.display = 'none';
     });
     menu.appendChild(closeBtn);
   };
 
-  // Make all sections editable on click
-  document.querySelectorAll('section').forEach(section => {
-    section.addEventListener('click', e => {
+  document.querySelectorAll('section, header, footer').forEach(el => {
+    el.addEventListener('click', e => {
       e.stopPropagation();
-      currentSection = section;
+      currentSection = el;
       renderEditScreen();
     });
   });
 
-  // Click outside to close
   document.addEventListener('click', e => {
     if (e.target.id === 'optionsMenu') {
       menu.style.display = 'none';
     }
   });
 });
-

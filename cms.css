@@ -94,3 +94,83 @@ button[disabled] {
 h1,h2,h3,h4,h5, p, image, section, article {
     cursor: pointer;
 }
+
+* {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+
+    body {
+      line-height: 1.6;
+      background-color: #f9f9f9;
+      color: #333;
+    }
+
+    header {
+      background: #333;
+      color: #fff;
+      padding: 20px;
+    }
+
+    header nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    header nav a {
+      color: #fff;
+      margin-left: 20px;
+      text-decoration: none;
+    }
+
+    .hero {
+      background: #0077cc;
+      color: white;
+      padding: 100px 20px;
+      text-align: center;
+    }
+
+    .section {
+      padding: 60px 20px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .features {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+
+    .feature-box {
+      flex: 1;
+      background: white;
+      padding: 20px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      min-width: 250px;
+    }
+
+    .about, .contact {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+      padding: 30px;
+    }
+
+    footer {
+      background: #222;
+      color: #ccc;
+      text-align: center;
+      padding: 20px;
+    }
+
+    ul{
+        display: flex;
+        list-style: none;
+    }
