@@ -1,22 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const menu = document.createElement('div');
   menu.id = 'optionsMenu';
-  Object.assign(menu.style, {
-    position: 'fixed',
-    top: '0',
-    left: '0',
-    width: '100vw',
-    height: '100vh',
-    background: 'white',
-    display: 'none',
-    flexDirection: 'column',
-    alignItems: 'center',
-    zIndex: '9999',
-    padding: '2rem',
-    boxSizing: 'border-box',
-    overflowY: 'auto',
-    justifyContent: 'flex-start',
-  });
+     menu.classList.add('options-menu');
+
   document.body.appendChild(menu);
 
   let currentSection = null;
@@ -24,16 +10,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const createButton = (label, onClick) => {
     const btn = document.createElement('button');
     btn.textContent = label;
-    btn.style = `
-      margin: 0.5rem;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      cursor: pointer;
-      background: black;
-      color: white;
-      border: none;
-      border-radius: 5px;
-    `;
+         btn.classList.add('button');
+
     btn.onclick = onClick;
     return btn;
   };
@@ -78,16 +56,8 @@ const processEditableElements = (element, parentWrapper) => {
 
       const removeBtn = document.createElement('button');
       removeBtn.textContent = '🗑';
-      removeBtn.style = `
-        padding: 0.3rem 0.6rem;
-        margin-top: 0.5rem;
-        font-size: 1rem;
-        background: black;
-        color: white;
-        cursor: pointer;
-        border: none;
-        border-radius: 4px;
-      `;
+           removeBtn.classList.add('remove-button');
+
       removeBtn.onclick = () => {
         if (list.children.length <= 1) {
           alert('You must have at least one list item.');
@@ -106,16 +76,7 @@ const processEditableElements = (element, parentWrapper) => {
 
   const addBtn = document.createElement('button');
   addBtn.textContent = '➕ Add List Item';
-  addBtn.style = `
-    margin-top: 0.5rem;
-    padding: 0.4rem 0.8rem;
-    font-size: 1rem;
-    cursor: pointer;
-    background: black;
-    color: white;
-    border: none;
-    border-radius: 4px;
-  `;
+      addBtn.classList.add('add-button');
   addBtn.onclick = () => {
     const newLi = document.createElement('li');
     const newH3 = document.createElement('h3');
@@ -302,7 +263,7 @@ const processEditableElements = (element, parentWrapper) => {
     classSelectWrapper.appendChild(moveDownBtn);
 
     // Populate class dropdown
-    fetch('https://timmit147.github.io/cms-js/template')
+    fetch('https://timmit147.github.io/cms-js/template.html')
       .then(response => response.text())
       .then(html => {
         const parser = new DOMParser();
