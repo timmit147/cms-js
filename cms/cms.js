@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
   let templateElements = [];
   let uniqueClasses = [];
 
-  // Load template once and extract elements & classes
   fetch('https://timmit147.github.io/cms-js/template.html')
     .then(res => res.text())
     .then(html => {
@@ -14,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
       templateElements = ['section', 'header', 'footer'].flatMap(t => Array.from(doc.querySelectorAll(t)));
       uniqueClasses = [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))];
 
-      // After loading template, attach event listeners
       document.querySelectorAll('section, header, footer').forEach(el => {
         el.addEventListener('click', e => {
           e.stopPropagation();
@@ -24,7 +22,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     })
     .catch(() => alert('Failed to load template.'));
-
 });
 
 function createMenu() {
@@ -32,14 +29,6 @@ function createMenu() {
   div.id = 'optionsMenu';
   div.classList.add('options-menu', 'hidden');
   return div;
-}
-
-function btn(label, onClick, classes = ['button']) {
-  const b = document.createElement('button');
-  b.textContent = label;
-  b.classList.add(...classes);
-  b.onclick = onClick;
-  return b;
 }
 
 const show = m => { m.classList.remove('hidden'); m.style.display = 'flex'; };
@@ -52,52 +41,92 @@ function renderEdit(menu, current, templateElements, uniqueClasses) {
   const wrapper = document.createElement('div');
   wrapper.className = 'edit-screen-wrapper';
 
-  wrapper.appendChild(classSelector(menu, current, templateElements, uniqueClasses));
-  editElems(current, wrapper);
+  const buttonsWrapper = document.createElement('div');
+  buttonsWrapper.className = 'buttons-wrapper';
 
-  menu.appendChild(wrapper);
-  menu.appendChild(btn('❌ Close', () => hide(menu)));
-}
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Add block';
+  addBtn.addEventListener('click', () => showAddBlockMenu(menu, current, templateElements));
 
-function classSelector(menu, current, templateElements, uniqueClasses) {
-  const wrap = document.createElement('div');
-  wrap.className = 'class-select-wrapper';
-
-  const label = document.createElement('label');
-  label.textContent = 'Select Element Class:';
-  label.className = 'select-label';
-  wrap.appendChild(label);
-
-  const select = document.createElement('select');
-  select.className = 'select-element';
-  wrap.appendChild(select);
-
-  uniqueClasses.forEach(cls => {
-    const opt = document.createElement('option');
-    opt.value = cls;
-    opt.textContent = cls;
-    select.appendChild(opt);
-  });
-
-  const addBtn = btn('➕ Add Below', () => addBelow(select.value, current, menu, templateElements));
-  const removeBtn = btn('🗑 Remove Element', () => {
+  const removeBtn = document.createElement('button');
+  removeBtn.textContent = 'Remove block';
+  removeBtn.addEventListener('click', () => {
     if (current) {
       current.remove();
       hide(menu);
     }
   });
-  const moveDownBtn = btn('⬇ Move Element Down', () => {
+
+  const moveDownBtn = document.createElement('button');
+  moveDownBtn.textContent = 'Move block down';
+  moveDownBtn.addEventListener('click', () => {
     if (current?.nextElementSibling)
       current.parentNode.insertBefore(current.nextElementSibling, current);
     hide(menu);
   });
 
-  wrap.append(addBtn, removeBtn, moveDownBtn);
+  buttonsWrapper.append(addBtn, removeBtn, moveDownBtn);
 
-  return wrap;
+  // Add class "button" to all buttons inside buttonsWrapper
+  Array.from(buttonsWrapper.querySelectorAll('button')).forEach(btn => btn.classList.add('button'));
+
+  wrapper.appendChild(buttonsWrapper);
+
+  editElems(current, wrapper);
+  menu.appendChild(wrapper);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'Close';
+  closeBtn.classList.add('close');
+  closeBtn.addEventListener('click', () => hide(menu));
+  menu.appendChild(closeBtn);
 }
 
-function addBelow(cls, current, menu, templateElements) {
+// Show custom block selection menu with different items, not from classes
+function showAddBlockMenu(menu, current, templateElements) {
+  menu.innerHTML = '';
+  show(menu);
+
+  const backBtn = document.createElement('button');
+  backBtn.textContent = 'Go Back';
+  backBtn.className = 'back-btn';
+  backBtn.addEventListener('click', () => {
+    const uniqueClasses = [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))];
+    renderEdit(menu, current, templateElements, uniqueClasses);
+  });
+
+  const container = document.createElement('div');
+  container.className = 'add-block-selector';
+
+  const title = document.createElement('h3');
+  title.textContent = 'Select a block to add below:';
+  container.appendChild(title);
+
+  // Use actual classes from the template to create buttons
+  const uniqueClasses = [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))];
+
+  if (uniqueClasses.length === 0) {
+    const noBlocksMsg = document.createElement('p');
+    noBlocksMsg.textContent = 'No blocks found in template.';
+    container.appendChild(noBlocksMsg);
+  } else {
+    uniqueClasses.forEach(cls => {
+      const blockBtn = document.createElement('button');
+      blockBtn.textContent = cls || '(no class)';
+      blockBtn.className = 'block-option-btn';
+      blockBtn.addEventListener('click', () => {
+        addBelowByClass(cls, current, menu, templateElements);
+      });
+      container.appendChild(blockBtn);
+    });
+  }
+
+  menu.appendChild(container);
+  menu.appendChild(backBtn);
+}
+
+
+function addBelowByClass(cls, current, menu, templateElements) {
   if (!cls || !current) return;
   const found = templateElements.find(el => el.classList.contains(cls));
   if (found) {
@@ -106,10 +135,11 @@ function addBelow(cls, current, menu, templateElements) {
     clone.addEventListener('click', e => {
       e.stopPropagation();
       current = clone;
-      renderEdit(menu, current, templateElements, [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))]);
+      const uniqueClasses = [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))];
+      renderEdit(menu, current, templateElements, uniqueClasses);
     });
   } else {
-    alert('Matching element not found.');
+    alert(`Block with class "${cls}" not found in template.`);
   }
   hide(menu);
 }
@@ -142,11 +172,14 @@ function editList(list, container) {
       liWrap.className = 'li-wrapper li-wrapper-style';
       editElems(li, liWrap);
 
-      const remBtn = btn('🗑', () => {
+      const remBtn = document.createElement('button');
+      remBtn.textContent = 'Remove Item';
+      remBtn.className = 'remove-button';
+      remBtn.addEventListener('click', () => {
         if (list.children.length <= 1) return alert('At least one list item required.');
         li.remove();
         renderItems();
-      }, ['remove-button']);
+      });
 
       liWrap.appendChild(remBtn);
       wrap.appendChild(liWrap);
@@ -154,12 +187,15 @@ function editList(list, container) {
   };
   renderItems();
 
-  const addBtn = btn('➕ Add List Item', () => {
+  const addBtn = document.createElement('button');
+  addBtn.textContent = 'Add List Item';
+  addBtn.className = 'add-button';
+  addBtn.addEventListener('click', () => {
     const newLi = document.createElement('li');
     newLi.innerHTML = '<h3>New Title</h3><p>New description text.</p>';
     list.appendChild(newLi);
     renderItems();
-  }, ['add-button']);
+  });
   wrap.appendChild(addBtn);
 
   container.appendChild(wrap);
@@ -224,26 +260,21 @@ function editSimple(el, tag, container) {
 }
 
 function createEditable(el) {
-  // Create container
   const container = document.createElement('div');
   container.className = 'editable-container';
 
-  // Create toolbar
   const toolbar = document.createElement('div');
   toolbar.className = 'editable-toolbar';
 
-  // Editable content area
   const editableDiv = document.createElement('div');
   editableDiv.contentEditable = true;
   editableDiv.className = 'editable-content';
   editableDiv.innerHTML = el.innerHTML;
 
-  // Update original element on input
   editableDiv.addEventListener('input', () => {
     el.innerHTML = editableDiv.innerHTML;
   });
 
-  // Helper function to create toolbar buttons
   function createToolBtn(label, command) {
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -267,16 +298,11 @@ function createEditable(el) {
     return btn;
   }
 
-  // Add toolbar buttons
-  toolbar.appendChild(createToolBtn('B', 'bold'));
-  toolbar.appendChild(createToolBtn('I', 'italic'));
-  toolbar.appendChild(createToolBtn('U', 'underline'));
-  toolbar.appendChild(createToolBtn('🔗', 'createLink'));
+  toolbar.appendChild(createToolBtn('Bold', 'bold'));
+  toolbar.appendChild(createToolBtn('Italic', 'italic'));
+  toolbar.appendChild(createToolBtn('Underline', 'underline'));
+  toolbar.appendChild(createToolBtn('Link', 'createLink'));
 
-  // Assemble everything
-  container.appendChild(toolbar);
-  container.appendChild(editableDiv);
-
+  container.append(toolbar, editableDiv);
   return container;
 }
-

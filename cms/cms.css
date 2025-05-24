@@ -31,19 +31,14 @@ header, section, article, footer {
 
 .options-menu {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: white;
-  display: none;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  z-index: 9999;
-  padding: 2rem;
-  box-sizing: border-box;
-  overflow-y: auto;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    display: none;
+    z-index: 9999;
+    padding: 10px;
 }
 
 
@@ -55,7 +50,6 @@ header, section, article, footer {
 
 .class-select-wrapper {
     display: flex;
-    flex-direction: column;
     gap: 10px;
 }
 
@@ -73,4 +67,37 @@ header, section, article, footer {
 
 .hidden {
   display: none;
+}
+
+.close{
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 5px;
+}
+
+.back-btn{
+    position: fixed;
+  top: 10px;
+  right: 10px;
+  padding: 5px;
+}
+
+.editable-toolbar {
+    display: flex;
+    gap: 5px;
+    padding-bottom: 5px;
+}
+
+.tool-btn {
+    padding: 5px;
+}
+
+.buttons-wrapper {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    .button{
+        padding: 5px;
+    }
 }
