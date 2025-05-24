@@ -135,19 +135,16 @@ h1,h2,h3,h4,h5, p, image, section, article {
       text-align: center;
     }
 
-    .section {
+    .features {
       padding: 60px 20px;
       max-width: 1000px;
       margin: auto;
-    }
-
-    .features {
+      .features-list{
       display: flex;
       gap: 20px;
       flex-wrap: wrap;
-    }
-
-    .feature-box {
+      }
+          .feature-box {
       flex: 1;
       background: white;
       padding: 20px;
@@ -155,8 +152,11 @@ h1,h2,h3,h4,h5, p, image, section, article {
       border-radius: 8px;
       min-width: 250px;
     }
+    }
 
-    .about, .contact {
+
+
+    .text-block {
       background: #fff;
       border-radius: 8px;
       box-shadow: 0 0 10px rgba(0,0,0,0.05);

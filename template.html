@@ -1,4 +1,13 @@
-<header>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Example Website</title>
+</head>
+<body>
+
+<header class="nav">
     <nav>
       <p><strong>MyWebsite</strong></div>
     <ul>
@@ -10,9 +19,14 @@
     </nav>
 </header>
 
-  <section id="features">
+  <section class="hero">
+    <h1>Welcome to MyWebsite</h1>
+    <p>We provide amazing solutions for your business</p>
+  </section>
+
+  <section id="features" class="features">
     <h2>Our Features</h2>
-    <div class="features">
+    <div class="features-list">
       <div class="feature-box">
         <h3>Fast</h3>
         <p>Lightning-fast performance to keep your users happy.</p>
@@ -28,11 +42,16 @@
     </div>
   </section>
 
-  <section id="about">
+  <section id="about" class="text-block">
     <h2>About Us</h2>
     <p>We're a passionate team dedicated to building the best web experiences. Our mission is to help you succeed online.</p>
   </section>
 
-  <footer>
+  <footer class="footer">
     <p>&copy; 2025 MyWebsite. All rights reserved.</p>
   </footer>
+
+  <script src="cms/cms.js"></script>
+<link rel="stylesheet" href="cms/cms.css">
+</body>
+</html>

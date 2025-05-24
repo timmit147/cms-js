@@ -302,7 +302,7 @@ const processEditableElements = (element, parentWrapper) => {
     classSelectWrapper.appendChild(moveDownBtn);
 
     // Populate class dropdown
-    fetch('https://timmit147.github.io/cms-js/template.html')
+    fetch('https://timmit147.github.io/cms-js/template')
       .then(response => response.text())
       .then(html => {
         const parser = new DOMParser();
