@@ -1,329 +1,282 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const menu = document.createElement('div');
-  menu.id = 'optionsMenu';
-  menu.classList.add('options-menu');
-
+  const menu = createMenu();
   document.body.appendChild(menu);
 
-  let currentSection = null;
+  let current = null;
+  let templateElements = [];
+  let uniqueClasses = [];
 
-  const createButton = (label, onClick) => {
-    const btn = document.createElement('button');
-    btn.textContent = label;
-    btn.classList.add('button');
+  // Load template once and extract elements & classes
+  fetch('https://timmit147.github.io/cms-js/template.html')
+    .then(res => res.text())
+    .then(html => {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      templateElements = ['section', 'header', 'footer'].flatMap(t => Array.from(doc.querySelectorAll(t)));
+      uniqueClasses = [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))];
 
-    btn.onclick = onClick;
-    return btn;
-  };
-
-  const processEditableElements = (element, parentWrapper) => {
-    Array.from(element.children).forEach((childElement) => {
-      const tag = childElement.tagName.toLowerCase();
-      const editableTags = ['h1','h2','h3','h4','h5','h6','p','span','a','img','ul'];
-
-      if (!editableTags.includes(tag)) {
-        if (childElement.children.length > 0) {
-          processEditableElements(childElement, parentWrapper);
-        }
-        return;
-      }
-
-      const wrapper = document.createElement('div');
-      wrapper.classList.add('editable-wrapper');  // replace inline margin-bottom
-
-      const label = document.createElement('label');
-      label.classList.add('editable-label'); // replace inline display, font-weight, margin-bottom
-
-      if (tag === 'ul') {
-        label.textContent = 'List Items:';
-        wrapper.appendChild(label);
-
-        const list = childElement;
-
-        const renderListItems = () => {
-          // Clear previously rendered items
-          wrapper.querySelectorAll('.li-wrapper').forEach(el => el.remove());
-
-          const items = Array.from(list.children).filter(li => li.tagName.toLowerCase() === 'li');
-
-          items.forEach((li, i) => {
-            const liWrapper = document.createElement('div');
-            liWrapper.className = 'li-wrapper';
-            liWrapper.classList.add('li-wrapper-style'); // for margin, padding, border from original inline style
-
-            // Sub-elements of <li> (like <h3>, <p>) rendered individually
-            processEditableElements(li, liWrapper);
-
-            const removeBtn = document.createElement('button');
-            removeBtn.textContent = '🗑';
-            removeBtn.classList.add('remove-button');
-
-            removeBtn.onclick = () => {
-              if (list.children.length <= 1) {
-                alert('You must have at least one list item.');
-                return;
-              }
-              li.remove();
-              renderListItems();
-            };
-
-            liWrapper.appendChild(removeBtn);
-            wrapper.appendChild(liWrapper);
-          });
-        };
-
-        renderListItems();
-
-        const addBtn = document.createElement('button');
-        addBtn.textContent = '➕ Add List Item';
-        addBtn.classList.add('add-button');
-        addBtn.onclick = () => {
-          const newLi = document.createElement('li');
-          const newH3 = document.createElement('h3');
-          newH3.textContent = 'New Title';
-          const newP = document.createElement('p');
-          newP.textContent = 'New description text.';
-          newLi.appendChild(newH3);
-          newLi.appendChild(newP);
-          list.appendChild(newLi);
-          renderListItems();
-        };
-
-        wrapper.appendChild(addBtn);
-        parentWrapper.appendChild(wrapper);
-        return;
-      }
-
-      const editable = document.createElement('div');
-      editable.contentEditable = true;
-      editable.classList.add('editable-content'); // replace inline width, padding, border
-
-      if (tag.startsWith('h')) {
-        label.textContent = 'Heading Text:';
-        editable.innerHTML = childElement.innerHTML;
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
+      // After loading template, attach event listeners
+      document.querySelectorAll('section, header, footer').forEach(el => {
+        el.addEventListener('click', e => {
+          e.stopPropagation();
+          current = el;
+          renderEdit(menu, current, templateElements, uniqueClasses);
         });
-        wrapper.appendChild(label);
-        wrapper.appendChild(editable);
+      });
+    })
+    .catch(() => alert('Failed to load template.'));
 
-      } else if (tag === 'p') {
-        label.textContent = 'Paragraph Text:';
-        editable.innerHTML = childElement.innerHTML;
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
-        });
-        wrapper.appendChild(label);
-        wrapper.appendChild(editable);
+});
 
-      } else if (tag === 'span') {
-        label.textContent = 'Inline Text:';
-        editable.innerHTML = childElement.innerHTML;
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
-        });
-        wrapper.appendChild(label);
-        wrapper.appendChild(editable);
+function createMenu() {
+  const div = document.createElement('div');
+  div.id = 'optionsMenu';
+  div.classList.add('options-menu', 'hidden');
+  return div;
+}
 
-      } else if (tag === 'a') {
-        const linkLabel = document.createElement('label');
-        linkLabel.textContent = 'Link Text:';
-        linkLabel.classList.add('editable-label');
+function btn(label, onClick, classes = ['button']) {
+  const b = document.createElement('button');
+  b.textContent = label;
+  b.classList.add(...classes);
+  b.onclick = onClick;
+  return b;
+}
 
-        editable.innerHTML = childElement.innerHTML;
-        editable.addEventListener('input', () => {
-          childElement.innerHTML = editable.innerHTML;
-        });
+const show = m => { m.classList.remove('hidden'); m.style.display = 'flex'; };
+const hide = m => { m.classList.add('hidden'); m.style.display = 'none'; };
 
-        const hrefLabel = document.createElement('label');
-        hrefLabel.textContent = 'Link URL:';
-        hrefLabel.classList.add('editable-label');
+function renderEdit(menu, current, templateElements, uniqueClasses) {
+  menu.innerHTML = '';
+  show(menu);
 
-        const hrefInput = document.createElement('input');
-        hrefInput.type = 'text';
-        hrefInput.value = childElement.href;
-        hrefInput.placeholder = 'https://example.com';
-        hrefInput.classList.add('input-text');
-        hrefInput.addEventListener('input', () => {
-          childElement.href = hrefInput.value;
-        });
+  const wrapper = document.createElement('div');
+  wrapper.className = 'edit-screen-wrapper';
 
-        wrapper.appendChild(linkLabel);
-        wrapper.appendChild(editable);
-        wrapper.appendChild(hrefLabel);
-        wrapper.appendChild(hrefInput);
+  wrapper.appendChild(classSelector(menu, current, templateElements, uniqueClasses));
+  editElems(current, wrapper);
 
-      } else if (tag === 'img') {
-        const srcLabel = document.createElement('label');
-        srcLabel.textContent = 'Image Source:';
-        srcLabel.classList.add('editable-label');
+  menu.appendChild(wrapper);
+  menu.appendChild(btn('❌ Close', () => hide(menu)));
+}
 
-        const srcInput = document.createElement('input');
-        srcInput.type = 'text';
-        srcInput.value = childElement.src;
-        srcInput.classList.add('input-text');
-        srcInput.addEventListener('input', () => {
-          childElement.src = srcInput.value;
-        });
+function classSelector(menu, current, templateElements, uniqueClasses) {
+  const wrap = document.createElement('div');
+  wrap.className = 'class-select-wrapper';
 
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'image/*';
-        fileInput.classList.add('file-input');
-        fileInput.addEventListener('change', (e) => {
-          const reader = new FileReader();
-          reader.onload = ev => {
-            childElement.src = ev.target.result;
-            srcInput.value = ev.target.result;
-          };
-          reader.readAsDataURL(e.target.files[0]);
-        });
+  const label = document.createElement('label');
+  label.textContent = 'Select Element Class:';
+  label.className = 'select-label';
+  wrap.appendChild(label);
 
-        wrapper.appendChild(srcLabel);
-        wrapper.appendChild(srcInput);
-        wrapper.appendChild(fileInput);
-      }
+  const select = document.createElement('select');
+  select.className = 'select-element';
+  wrap.appendChild(select);
 
-      parentWrapper.appendChild(wrapper);
-    });
-  };
-
-  const renderEditScreen = () => {
-    menu.innerHTML = '';
-    menu.style.display = 'flex';
-
-    const wrapper = document.createElement('div');
-    wrapper.classList.add('edit-screen-wrapper'); // for width and margin
-
-    const classSelectWrapper = document.createElement('div');
-    classSelectWrapper.classList.add('class-select-wrapper'); // for margin bottom
-
-    const classSelectLabel = document.createElement('label');
-    classSelectLabel.textContent = 'Select Element Class:';
-    classSelectLabel.classList.add('select-label'); // for font weight
-    classSelectWrapper.appendChild(classSelectLabel);
-
-    const classSelect = document.createElement('select');
-    classSelect.classList.add('select-element'); // for width, padding, margin-top, border
-    classSelectWrapper.appendChild(classSelect);
-    wrapper.appendChild(classSelectWrapper);
-
-    const addSectionBtn = createButton('➕ Add Below', () => {
-      const selectedClass = classSelect.value;
-      if (!selectedClass) return;
-
-      fetch('https://timmit147.github.io/cms-js/template.html')
-        .then(response => response.text())
-        .then(html => {
-          const parser = new DOMParser();
-          const doc = parser.parseFromString(html, 'text/html');
-          const allElements = ['section', 'header', 'footer'].flatMap(tag =>
-            Array.from(doc.querySelectorAll(tag))
-          );
-          const matchingElement = allElements.find(el => el.classList.contains(selectedClass));
-
-          if (matchingElement && currentSection) {
-            const cloned = matchingElement.cloneNode(true);
-            currentSection.insertAdjacentElement('afterend', cloned);
-            cloned.addEventListener('click', e => {
-              e.stopPropagation();
-              currentSection = cloned;
-              renderEditScreen();
-            });
-          } else {
-            alert('Matching element not found.');
-          }
-
-          menu.style.display = 'none';
-        })
-        .catch(error => {
-          console.error('Failed to add element:', error);
-          menu.style.display = 'none';
-        });
-    });
-    classSelectWrapper.appendChild(addSectionBtn);
-
-    const removeBtn = createButton('🗑 Remove Element', () => {
-      if (currentSection) {
-        currentSection.remove();
-        currentSection = null;
-      }
-      menu.style.display = 'none';
-    });
-    classSelectWrapper.appendChild(removeBtn);
-
-    const moveDownBtn = createButton('⬇ Move Element Down', () => {
-      if (currentSection && currentSection.nextElementSibling) {
-        currentSection.parentNode.insertBefore(currentSection.nextElementSibling, currentSection);
-      }
-      menu.style.display = 'none';
-    });
-    classSelectWrapper.appendChild(moveDownBtn);
-
-    // Populate class dropdown
-    fetch('https://timmit147.github.io/cms-js/template.html')
-      .then(response => response.text())
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const allElements = ['section', 'header', 'footer'].flatMap(tag =>
-          Array.from(doc.querySelectorAll(tag))
-        );
-
-        const classNames = Array.from(new Set(
-          allElements.map(el => el.className.trim()).filter(name => name !== "")
-        ));
-
-        classNames.forEach(cls => {
-          const option = document.createElement('option');
-          option.value = cls;
-          option.textContent = cls;
-          classSelect.appendChild(option);
-        });
-      })
- .catch(error => console.error('Failed to fetch templates:', error));
-
-const editHeaderDiv = document.createElement('div');
-editHeaderDiv.classList.add('edit-header'); // for styling the container div
-
-const label = document.createElement('p');
-label.textContent = `Editing Element: ${currentSection ? currentSection.tagName.toLowerCase() : 'none'}`;
-label.classList.add('editing-label'); // font-weight and margin bottom
-editHeaderDiv.appendChild(label);
-
-const toolbar = document.createElement('div');
-toolbar.classList.add('toolbar'); // margin-bottom, display flex, gap, flex-wrap
-toolbar.appendChild(createButton('Bold', () => document.execCommand('bold')));
-toolbar.appendChild(createButton('Italic', () => document.execCommand('italic')));
-toolbar.appendChild(createButton('Underline', () => document.execCommand('underline')));
-toolbar.appendChild(createButton('Link', () => {
-  const url = prompt('Enter URL:');
-  if (url) document.execCommand('createLink', false, url);
-}));
-editHeaderDiv.appendChild(toolbar);
-
-wrapper.appendChild(editHeaderDiv);
-
-    processEditableElements(currentSection, wrapper);
-    menu.appendChild(wrapper);
-
-    const closeBtn = createButton('❌ Close', () => {
-      menu.style.display = 'none';
-    });
-    menu.appendChild(closeBtn);
-  };
-
-  document.querySelectorAll('section, header, footer').forEach(el => {
-    el.addEventListener('click', e => {
-      e.stopPropagation();
-      currentSection = el;
-      renderEditScreen();
-    });
+  uniqueClasses.forEach(cls => {
+    const opt = document.createElement('option');
+    opt.value = cls;
+    opt.textContent = cls;
+    select.appendChild(opt);
   });
 
-  document.addEventListener('click', e => {
-    if (e.target.id === 'optionsMenu') {
-      menu.style.display = 'none';
+  const addBtn = btn('➕ Add Below', () => addBelow(select.value, current, menu, templateElements));
+  const removeBtn = btn('🗑 Remove Element', () => {
+    if (current) {
+      current.remove();
+      hide(menu);
     }
   });
-});
+  const moveDownBtn = btn('⬇ Move Element Down', () => {
+    if (current?.nextElementSibling)
+      current.parentNode.insertBefore(current.nextElementSibling, current);
+    hide(menu);
+  });
+
+  wrap.append(addBtn, removeBtn, moveDownBtn);
+
+  return wrap;
+}
+
+function addBelow(cls, current, menu, templateElements) {
+  if (!cls || !current) return;
+  const found = templateElements.find(el => el.classList.contains(cls));
+  if (found) {
+    const clone = found.cloneNode(true);
+    current.insertAdjacentElement('afterend', clone);
+    clone.addEventListener('click', e => {
+      e.stopPropagation();
+      current = clone;
+      renderEdit(menu, current, templateElements, [...new Set(templateElements.map(e => e.className.trim()).filter(c => c))]);
+    });
+  } else {
+    alert('Matching element not found.');
+  }
+  hide(menu);
+}
+
+function editElems(el, container) {
+  const tags = ['h1','h2','h3','h4','h5','h6','p','span','a','img','ul'];
+  Array.from(el.children).forEach(child => {
+    const tag = child.tagName.toLowerCase();
+    if (!tags.includes(tag)) {
+      if (child.children.length) editElems(child, container);
+      return;
+    }
+    if (tag === 'ul') return editList(child, container);
+    editSimple(child, tag, container);
+  });
+}
+
+function editList(list, container) {
+  const wrap = document.createElement('div');
+  wrap.className = 'editable-wrapper';
+  const label = document.createElement('label');
+  label.className = 'editable-label';
+  label.textContent = 'List Items:';
+  wrap.appendChild(label);
+
+  const renderItems = () => {
+    wrap.querySelectorAll('.li-wrapper').forEach(el => el.remove());
+    Array.from(list.children).filter(li => li.tagName.toLowerCase() === 'li').forEach(li => {
+      const liWrap = document.createElement('div');
+      liWrap.className = 'li-wrapper li-wrapper-style';
+      editElems(li, liWrap);
+
+      const remBtn = btn('🗑', () => {
+        if (list.children.length <= 1) return alert('At least one list item required.');
+        li.remove();
+        renderItems();
+      }, ['remove-button']);
+
+      liWrap.appendChild(remBtn);
+      wrap.appendChild(liWrap);
+    });
+  };
+  renderItems();
+
+  const addBtn = btn('➕ Add List Item', () => {
+    const newLi = document.createElement('li');
+    newLi.innerHTML = '<h3>New Title</h3><p>New description text.</p>';
+    list.appendChild(newLi);
+    renderItems();
+  }, ['add-button']);
+  wrap.appendChild(addBtn);
+
+  container.appendChild(wrap);
+}
+
+function editSimple(el, tag, container) {
+  const wrap = document.createElement('div');
+  wrap.className = 'editable-wrapper';
+
+  const label = document.createElement('label');
+  label.className = 'editable-label';
+
+  const appendEditable = (text) => {
+    label.textContent = text;
+    wrap.appendChild(label);
+    wrap.appendChild(createEditable(el));
+  };
+
+  if (['h1','h2','h3','h4','h5','h6'].includes(tag)) appendEditable('Heading Text:');
+  else if (tag === 'p') appendEditable('Paragraph Text:');
+  else if (tag === 'span') appendEditable('Inline Text:');
+  else if (tag === 'a') {
+    label.textContent = 'Link Text:';
+    const editable = createEditable(el);
+    const hrefLabel = document.createElement('label');
+    hrefLabel.className = 'editable-label';
+    hrefLabel.textContent = 'Link URL:';
+
+    const hrefInput = document.createElement('input');
+    hrefInput.type = 'text';
+    hrefInput.value = el.href;
+    hrefInput.placeholder = 'https://example.com';
+    hrefInput.className = 'input-text';
+    hrefInput.addEventListener('input', () => el.href = hrefInput.value);
+
+    wrap.append(label, editable, hrefLabel, hrefInput);
+  } else if (tag === 'img') {
+    label.textContent = 'Image Source:';
+    const srcInput = document.createElement('input');
+    srcInput.type = 'text';
+    srcInput.value = el.src;
+    srcInput.className = 'input-text';
+    srcInput.addEventListener('input', () => el.src = srcInput.value);
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.className = 'file-input';
+    fileInput.addEventListener('change', e => {
+      const reader = new FileReader();
+      reader.onload = ev => {
+        el.src = ev.target.result;
+        srcInput.value = ev.target.result;
+      };
+      reader.readAsDataURL(e.target.files[0]);
+    });
+
+    wrap.append(label, srcInput, fileInput);
+  }
+
+  container.appendChild(wrap);
+}
+
+function createEditable(el) {
+  // Create container
+  const container = document.createElement('div');
+  container.className = 'editable-container';
+
+  // Create toolbar
+  const toolbar = document.createElement('div');
+  toolbar.className = 'editable-toolbar';
+
+  // Editable content area
+  const editableDiv = document.createElement('div');
+  editableDiv.contentEditable = true;
+  editableDiv.className = 'editable-content';
+  editableDiv.innerHTML = el.innerHTML;
+
+  // Update original element on input
+  editableDiv.addEventListener('input', () => {
+    el.innerHTML = editableDiv.innerHTML;
+  });
+
+  // Helper function to create toolbar buttons
+  function createToolBtn(label, command) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = label;
+    btn.className = 'tool-btn';
+
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      editableDiv.focus();
+
+      if (command === 'createLink') {
+        const url = prompt('Enter the URL:', 'https://');
+        if (url) {
+          document.execCommand(command, false, url);
+        }
+      } else {
+        document.execCommand(command, false, null);
+      }
+    });
+
+    return btn;
+  }
+
+  // Add toolbar buttons
+  toolbar.appendChild(createToolBtn('B', 'bold'));
+  toolbar.appendChild(createToolBtn('I', 'italic'));
+  toolbar.appendChild(createToolBtn('U', 'underline'));
+  toolbar.appendChild(createToolBtn('🔗', 'createLink'));
+
+  // Assemble everything
+  container.appendChild(toolbar);
+  container.appendChild(editableDiv);
+
+  return container;
+}
+

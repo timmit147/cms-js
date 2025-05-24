@@ -23,18 +23,9 @@
     border-radius: 4px;
 }
 
-button {
-    background-color: black;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    cursor: pointer;
-}
 
 
-h1,h2,h3,h4,h5, p, image, section, article {
+header, section, article, footer {
     cursor: pointer;
 }
 
@@ -55,38 +46,7 @@ h1,h2,h3,h4,h5, p, image, section, article {
   overflow-y: auto;
 }
 
-.btn{
-  margin: 0.5rem;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      cursor: pointer;
-      background: black;
-      color: white;
-      border: none;
-      border-radius: 5px;
-}
 
-.remove-button{
-          padding: 0.3rem 0.6rem;
-        margin-top: 0.5rem;
-        font-size: 1rem;
-        background: black;
-        color: white;
-        cursor: pointer;
-        border: none;
-        border-radius: 4px;
-}
-
-.add-button{
-  margin-top: 0.5rem;
-    padding: 0.4rem 0.8rem;
-    font-size: 1rem;
-    cursor: pointer;
-    background: black;
-    color: white;
-    border: none;
-    border-radius: 4px;
-}
 
 .editable-content {
     border: 1px solid;
@@ -109,4 +69,8 @@ h1,h2,h3,h4,h5, p, image, section, article {
 
 .edit-header {
     margin-bottom: 40px;
+}
+
+.hidden {
+  display: none;
 }
