@@ -253,7 +253,7 @@ const processEditableElements = (element, parentWrapper) => {
       const selectedClass = classSelect.value;
       if (!selectedClass) return;
 
-      fetch('https://timmit147.github.io/templates/')
+      fetch('https://timmit147.github.io/cms-js/template.html')
         .then(response => response.text())
         .then(html => {
           const parser = new DOMParser();
