@@ -281,23 +281,28 @@ document.addEventListener('DOMContentLoaded', () => {
           classSelect.appendChild(option);
         });
       })
-      .catch(error => console.error('Failed to fetch templates:', error));
+ .catch(error => console.error('Failed to fetch templates:', error));
 
-    const label = document.createElement('p');
-    label.textContent = `Editing Element: ${currentSection ? currentSection.tagName.toLowerCase() : 'none'}`;
-    label.classList.add('editing-label'); // font-weight and margin bottom
-    wrapper.appendChild(label);
+const editHeaderDiv = document.createElement('div');
+editHeaderDiv.classList.add('edit-header'); // for styling the container div
 
-    const toolbar = document.createElement('div');
-    toolbar.classList.add('toolbar'); // margin-bottom, display flex, gap, flex-wrap
-    toolbar.appendChild(createButton('Bold', () => document.execCommand('bold')));
-    toolbar.appendChild(createButton('Italic', () => document.execCommand('italic')));
-    toolbar.appendChild(createButton('Underline', () => document.execCommand('underline')));
-    toolbar.appendChild(createButton('Link', () => {
-      const url = prompt('Enter URL:');
-      if (url) document.execCommand('createLink', false, url);
-    }));
-    wrapper.appendChild(toolbar);
+const label = document.createElement('p');
+label.textContent = `Editing Element: ${currentSection ? currentSection.tagName.toLowerCase() : 'none'}`;
+label.classList.add('editing-label'); // font-weight and margin bottom
+editHeaderDiv.appendChild(label);
+
+const toolbar = document.createElement('div');
+toolbar.classList.add('toolbar'); // margin-bottom, display flex, gap, flex-wrap
+toolbar.appendChild(createButton('Bold', () => document.execCommand('bold')));
+toolbar.appendChild(createButton('Italic', () => document.execCommand('italic')));
+toolbar.appendChild(createButton('Underline', () => document.execCommand('underline')));
+toolbar.appendChild(createButton('Link', () => {
+  const url = prompt('Enter URL:');
+  if (url) document.execCommand('createLink', false, url);
+}));
+editHeaderDiv.appendChild(toolbar);
+
+wrapper.appendChild(editHeaderDiv);
 
     processEditableElements(currentSection, wrapper);
     menu.appendChild(wrapper);
